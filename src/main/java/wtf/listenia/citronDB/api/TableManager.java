@@ -1,7 +1,6 @@
 package wtf.listenia.citronDB.api;
 
 import wtf.listenia.citronDB.api.builders.RowBuilder;
-import wtf.listenia.citronDB.api.builders.TableBuilder;
 import wtf.listenia.citronDB.internal.Requests;
 import wtf.listenia.citronDB.utils.Instancier;
 
