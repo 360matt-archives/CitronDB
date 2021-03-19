@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExpirableCache<K, V> extends ConcurrentHashMap<K, V> {
 
+    public static final ExpirableCache<Class<?>, Object> types = new ExpirableCache<>(10_000);
+
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     private final Map<K, Long> timeMap = new ConcurrentHashMap<>();
