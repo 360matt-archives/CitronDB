@@ -24,11 +24,12 @@ public class TableManager <D> {
     public final void createTable () {
         Requests.createTable(this);
     }
-    public final void delete () {
+    public final void createTable (final boolean update) {
+        Requests.createTable(this, update);
+    }
+    public final void deleteTable () {
         Requests.removeTable(this);
     }
-
-
     public void updateStructure () {
         Requests.updateTable(this);
     }
