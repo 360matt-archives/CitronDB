@@ -1,4 +1,5 @@
 import wtf.listenia.citronDB.api.Database;
+import wtf.listenia.citronDB.api.annotations.Size;
 import wtf.listenia.citronDB.api.annotations.Unique;
 import wtf.listenia.citronDB.api.builders.RowBuilder;
 import wtf.listenia.citronDB.api.TableManager;
@@ -9,27 +10,25 @@ public class SomeTests {
         @Unique(size = 50)
         public String test = "truc";
         public String truc = "jaaj";
-        public int caillou = 8;
+        @Size(size = 20)
+        public String caillou = "";
     }
 
     public static void main (final String[] args) {
 
         Database db2 = new Database() {{
-            setHost("sql11.freesqldatabase.com");
+            setHost("freedb.tech");
             setPort(3306);
-            setDbName("sql11398741");
-            setUsername("sql11398741");
-            setPassword("sTQFvgEqLW");
+            setDbName("freedbtech_souris");
+            setUsername("freedbtech_hey");
+            setPassword("cmabite");
             connect();
         }};
 
         TableManager<ExampleStucture> tableManager = db2.getTable("wsh", ExampleStucture.class);
 
-        tableManager.updateStructure();
-        // will update the table schema (add new columns (from ExpirableCache field), et remove deprecated columns)
 
-
-        tableManager.createTable();
+        tableManager.createTable(true);
         // will create the table, or if existe, update these.
 
 
