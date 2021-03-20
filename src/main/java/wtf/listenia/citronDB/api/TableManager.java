@@ -234,27 +234,11 @@ public class TableManager <D> {
 
     public final boolean exist (final RowBuilder pattern) {
         try {
-            final StringBuilder interro = new StringBuilder();
-
-            final Iterator<String> iter = pattern.datas.keySet().iterator();
-            if (iter.hasNext())
-                interro.append(iter.next()).append("=?");
-            while (iter.hasNext())
-                interro.append(",AND ").append(iter.next()).append("=?");
-
-            final PreparedStatement stmt = this.database.getConnection().prepareStatement(
-                    "SELECT 1 FROM `" + this.name + "` WHERE " + interro.toString()
-            );
-
-            int i = 1;
-            for (final Object object : pattern.datas.values())
-                stmt.setObject(i++, object);
-
-            final ResultSet rs = stmt.executeQuery();
+            final ResultSet rs = getResultForOneLine(pattern);
             final boolean state = rs.next();
 
             rs.close();
-            stmt.close();
+            rs.getStatement().close();
 
             return state;
         } catch (final SQLException e) {
@@ -272,25 +256,8 @@ public class TableManager <D> {
         D content = null;
         try {
             if (pattern.datas.size() > 0) {
-                final StringBuilder interro = new StringBuilder();
-
-                final Iterator<String> iter = pattern.datas.keySet().iterator();
-                if (iter.hasNext())
-                    interro.append(iter.next()).append("=?");
-                while (iter.hasNext())
-                    interro.append(",AND ").append(iter.next()).append("=?");
-
-                final PreparedStatement stmt = this.database.getConnection().prepareStatement(
-                        "SELECT 1 FROM `" + this.name + "` WHERE " + interro.toString()
-                );
-
-                int i = 1;
-                for (final Object object : pattern.datas.values())
-                    stmt.setObject(i++, object);
-
-                final ResultSet rs = stmt.executeQuery();
+                final ResultSet rs = getResultForOneLine(pattern);
                 final ResultSetMetaData data = rs.getMetaData();
-
 
                 if (rs.next()) {
                     content = Instancier.createInstance(this.defaultInstance);
@@ -302,7 +269,7 @@ public class TableManager <D> {
                 }
 
                 rs.close();
-                stmt.close();
+                rs.getStatement().close();
             }
         } catch (final SQLException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
@@ -379,6 +346,31 @@ public class TableManager <D> {
         } catch (final SQLException e) {
             e.printStackTrace();
         }
+    }
+
+
+
+
+    // ______________________________________________________________________________________ //
+
+    private ResultSet getResultForOneLine (final RowBuilder pattern) throws SQLException {
+        final StringBuilder interro = new StringBuilder();
+
+        final Iterator<String> iter = pattern.datas.keySet().iterator();
+        if (iter.hasNext())
+            interro.append(iter.next()).append("=?");
+        while (iter.hasNext())
+            interro.append(",AND ").append(iter.next()).append("=?");
+
+        final PreparedStatement stmt = this.database.getConnection().prepareStatement(
+                "SELECT 1 FROM `" + this.name + "` WHERE " + interro.toString()
+        );
+
+        int i = 1;
+        for (final Object object : pattern.datas.values())
+            stmt.setObject(i++, object);
+
+        return stmt.executeQuery();
     }
 
 }
