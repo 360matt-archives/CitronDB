@@ -1,9 +1,9 @@
 package wtf.listenia.citronDB.internal;
 
+import wtf.listenia.citronDB.api.TableManager;
 import wtf.listenia.citronDB.api.annotations.Primary;
 import wtf.listenia.citronDB.api.annotations.Unique;
 import wtf.listenia.citronDB.api.builders.RowBuilder;
-import wtf.listenia.citronDB.api.TableManager;
 import wtf.listenia.citronDB.utils.ColumnType;
 
 import java.lang.reflect.Field;
@@ -54,7 +54,7 @@ public class Requests {
 
             stmt.close();
 
-            if (update && status != 0) {
+            if (update && status == 0) {
                 // if the table has not been created above,
                 // we must apply the new structure by an ALTER.
                 updateTable(table);
@@ -66,14 +66,13 @@ public class Requests {
 
     public static void updateTable (final TableManager<?> table) {
         try {
-
             List<String> local = new ArrayList<>();
             List<String> distant = new ArrayList<>();
 
             final Statement stmt = table.database.getStatementWithException();
             final ResultSet rs = stmt.executeQuery("SELECT * FROM `" + table.name + "` WHERE 1 = 0;"); // select nothing
             final ResultSetMetaData meta = rs.getMetaData();
-            for (int i=0; i<meta.getColumnCount(); i++)
+            for (int i = 0; i < meta.getColumnCount(); i++)
                 distant.add(meta.getColumnName(i + 1));
             rs.close();
 
@@ -81,11 +80,14 @@ public class Requests {
             for (final Field field : table.defaultInstance.getClass().getFields())
                 local.add(field.getName()); // + " TEXT"
 
-            final StringJoiner toCreate = new StringJoiner(",");
-            final StringJoiner toDelete = new StringJoiner(",");
-            final StringJoiner toModify = new StringJoiner(",");
+
+            final StringBuilder req = new StringBuilder("ALTER TABLE `" + table.name + "` ");
+            boolean mustSend = false;
 
             if (local.size() > 0 || distant.size() > 0) {
+                StringJoiner toDelete = new StringJoiner(",");
+                StringJoiner toModify = new StringJoiner(",");
+
                 for (final String candid : distant) {
                     if (!local.contains(candid)) {
                         toDelete.add(candid);
@@ -93,24 +95,38 @@ public class Requests {
                         final Field field = instance.getField(candid);
                         toModify.add("MODIFY " + ColumnType.getFormat(field, false));
                     }
-                    local.remove(candid);
                 }
+
+                local.removeAll(distant);
+                distant = null; // GC
+
+                if (toDelete.length() > 0) {
+                    req.append("DROP").append(toDelete.toString());
+                    mustSend = true;
+                }
+                if (toModify.length() > 0) {
+                    req.append(toModify.toString());
+                    mustSend = true;
+                }
+                toDelete = null; // GC
+                toModify = null; // GC
+
+                StringJoiner toCreate = new StringJoiner(",");
                 for (final String candid : local) {
                     final Field field = instance.getField(candid);
                     toCreate.add(ColumnType.getFormat(field));
-                    distant.remove(candid);
                 }
+                local = null; // GC
+
+                if (toCreate.length() > 0) {
+                    req.append("ADD COLUMN").append(toCreate.toString());
+                    mustSend = true;
+                }
+                toCreate = null; // GC
             }
 
-            local = null; // GC
-            distant = null; // GC
-
-            if (toCreate.length() > 0)
-                stmt.execute("ALTER TABLE `" + table.name + "` ADD COLUMN " + toCreate.toString() + ";");
-            if (toDelete.length() > 0)
-                stmt.execute("ALTER TABLE `" + table.name + "` DROP " + toDelete.toString() + ";");
-            if (toModify.length() > 0)
-                stmt.execute("ALTER TABLE `" + table.name + "` " + toModify.toString() + ";");
+            if (mustSend) // If request is complete
+                stmt.execute(req.toString() + ";");
 
             stmt.close();
         } catch (SQLException | NoSuchFieldException e) {
@@ -148,7 +164,7 @@ public class Requests {
                         "INSERT INTO `" + table.name + "` " + columns + " VALUES (" + interro.toString() + ")"
                 );
                 for (int i = 0; i < valuesList.size(); i++)
-                    stmt.setObject(i+1, valuesList.get(i));
+                    stmt.setObject(i + 1, valuesList.get(i));
 
                 stmt.executeUpdate();
                 stmt.close();
@@ -242,7 +258,7 @@ public class Requests {
 
                 while (count-- > 0 && rs.next()) {
                     final D content = table.defaultInstance;
-                    for (int c=0; i<data.getColumnCount(); c++)
+                    for (int c = 0; i < data.getColumnCount(); c++)
                         content.getClass().getField(data.getColumnName(c + 1)).set(content, rs.getObject(c + 1));
                     res.add(content);
                 }
@@ -282,7 +298,7 @@ public class Requests {
             stmt.executeUpdate();
             stmt.close();
         } catch (final SQLException e) {
-           e.printStackTrace();
+            e.printStackTrace();
         }
     }
 

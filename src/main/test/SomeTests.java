@@ -11,7 +11,7 @@ public class SomeTests {
         public String test = "truc";
         public String truc = "jaaj";
         @Size(size = 20)
-        public String caillou = "";
+        public int caillou = 0;
     }
 
     public static void main (final String[] args) {
