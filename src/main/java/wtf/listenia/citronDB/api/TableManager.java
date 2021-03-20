@@ -2,7 +2,6 @@ package wtf.listenia.citronDB.api;
 
 import wtf.listenia.citronDB.api.builders.RowBuilder;
 import wtf.listenia.citronDB.internal.Requests;
-import wtf.listenia.citronDB.utils.Instancier;
 
 import java.util.Set;
 
@@ -11,14 +10,13 @@ public class TableManager <D> {
     public final Database database;
     public final String name;
 
-    public final D defaultInstance;
-    public D temporary;
+    public final Class<D> defaultInstance;
 
 
     public TableManager (final Database database, final String name, final Class<D> struct) {
         this.database = database;
         this.name = name;
-        this.temporary = this.defaultInstance = Instancier.getEmptyRaw(struct);
+        this.defaultInstance = struct;
     }
 
     public final void createTable () {
@@ -45,11 +43,16 @@ public class TableManager <D> {
         Requests.remove(this, builder);
     }
 
-    public final Set<D> getLines (final RowBuilder builder, final Class<D> struct) {
+    public final Set<D> getLines (final RowBuilder builder) {
         return Requests.getRow(this, builder);
     }
 
-    public final Set<D> getLines (final RowBuilder builder, final Class<D> struct, final int limit) {
+    public final D getLine (final RowBuilder builder) {
+        final Set<D> res = Requests.getRowLimited(this, builder, 1);
+        return (res.size() > 0) ? (D) res.toArray()[0] : null;
+    }
+
+    public final Set<D> getLines (final RowBuilder builder, final int limit) {
         return Requests.getRowLimited(this, builder, limit);
     }
 
