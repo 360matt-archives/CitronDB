@@ -7,16 +7,13 @@ public class Instancier {
      * @param <D> the type of structure
      * @return the default data of the structure (instance)
      */
-    public static <D> D getEmptyRaw (final Class<D> structure) {
-        if (!ExpirableCache.types.containsKey(structure)) {
-            try {
-                final D res = structure.newInstance();
-                ExpirableCache.types.put(structure, res);
-                return res;
-            } catch (InstantiationException | IllegalAccessException e) {
-                return null;
-            }
+    public static <D> D createInstance (final Class<D> structure) {
+        try {
+            return structure.newInstance();
+        } catch (final IllegalAccessException | InstantiationException e) {
+            e.printStackTrace();
+            return null;
         }
-        return (D) ExpirableCache.types.get(structure);
     }
+
 }
