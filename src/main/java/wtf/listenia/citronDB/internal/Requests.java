@@ -13,6 +13,10 @@ import java.util.*;
 public class Requests {
 
     public static void createTable (final TableManager<?> table) {
+        createTable(table, false);
+    }
+
+    public static void createTable (final TableManager<?> table, final boolean update) {
         try {
             final StringJoiner sj = new StringJoiner(", ");
             boolean hasPrimary = false;
@@ -43,17 +47,16 @@ public class Requests {
                     sj.add(field.getName() + " TEXT");
             }
 
-            final Statement stmt = table.database.connection.createStatement();
+            final Statement stmt = table.database.getStatementWithException();
 
             final String sql = "CREATE TABLE IF NOT EXISTS `" + table.name + "` (" + sj.toString() + ");";
             final int status = stmt.executeUpdate(sql);
 
             stmt.close();
 
-            if (status != 0) {
+            if (update && status != 0) {
                 // if the table has not been created above,
                 // we must apply the new structure by an ALTER.
-
                 updateTable(table);
             }
         } catch (final SQLException e) {
@@ -64,21 +67,19 @@ public class Requests {
     public static void updateTable (final TableManager<?> table) {
         try {
 
-            final Statement stmt = table.database.connection.createStatement();
-            final List<String> local = new ArrayList<>();
-            final List<String> distant = new ArrayList<>();
+            List<String> local = new ArrayList<>();
+            List<String> distant = new ArrayList<>();
 
-            final Class<?> instance = table.defaultInstance.getClass();
-
-            for (final Field field : table.defaultInstance.getClass().getFields())
-                local.add(field.getName()); // + " TEXT"
-
-
+            final Statement stmt = table.database.getStatementWithException();
             final ResultSet rs = stmt.executeQuery("SELECT * FROM `" + table.name + "` WHERE 1 = 0;"); // select nothing
             final ResultSetMetaData meta = rs.getMetaData();
             for (int i=0; i<meta.getColumnCount(); i++)
                 distant.add(meta.getColumnName(i + 1));
             rs.close();
+
+            final Class<?> instance = table.defaultInstance.getClass();
+            for (final Field field : table.defaultInstance.getClass().getFields())
+                local.add(field.getName()); // + " TEXT"
 
             final StringJoiner toCreate = new StringJoiner(",");
             final StringJoiner toDelete = new StringJoiner(",");
@@ -101,6 +102,9 @@ public class Requests {
                 }
             }
 
+            local = null; // GC
+            distant = null; // GC
+
             if (toCreate.length() > 0)
                 stmt.execute("ALTER TABLE `" + table.name + "` ADD COLUMN " + toCreate.toString() + ";");
             if (toDelete.length() > 0)
@@ -108,6 +112,7 @@ public class Requests {
             if (toModify.length() > 0)
                 stmt.execute("ALTER TABLE `" + table.name + "` " + toModify.toString() + ";");
 
+            stmt.close();
         } catch (SQLException | NoSuchFieldException e) {
             e.printStackTrace();
         }
@@ -115,7 +120,7 @@ public class Requests {
 
     public static void removeTable (final TableManager<?> table) {
         try {
-            final Statement stmt = table.database.connection.createStatement();
+            final Statement stmt = table.database.getStatementWithException();
             stmt.execute("DROP TABLE IF EXISTS `" + table.name + "`");
             stmt.close();
         } catch (final SQLException exception) {
@@ -129,23 +134,23 @@ public class Requests {
 
             if (fields.length >= 1) {
                 final StringJoiner columnsList = new StringJoiner(",");
-                final List<String> valuesList = new ArrayList<>();
+                final List<Object> valuesList = new ArrayList<>();
                 final StringJoiner interro = new StringJoiner(",");
 
                 for (final Field field : fields) {
                     columnsList.add(field.getName());
-                    valuesList.add(field.get(struct).toString());
+                    valuesList.add(field.get(struct));
                     interro.add("?");
                 }
 
                 final String columns = " (" + columnsList.toString() + ")";
-                final String sql = "INSERT INTO `" + table.name + "` " + columns + " VALUES (" + interro.toString() + ")";
-
-                final PreparedStatement stmt = table.database.connection.prepareStatement(sql);
+                final PreparedStatement stmt = table.database.getConnection().prepareStatement(
+                        "INSERT INTO `" + table.name + "` " + columns + " VALUES (" + interro.toString() + ")"
+                );
                 for (int i = 0; i < valuesList.size(); i++)
                     stmt.setObject(i+1, valuesList.get(i));
-                stmt.executeUpdate();
 
+                stmt.executeUpdate();
                 stmt.close();
             }
         } catch (final SQLException | IllegalAccessException e) {
@@ -155,56 +160,33 @@ public class Requests {
 
     /*
     public static insert (TableManager, Map<Str, Obj>)
-    Removed: https://pastebin.com/GRrCskFp
+    Removed: https://pastebin.com/hq8HFRwU
     */
 
-    public static void insert (final TableManager<?> table, final Map<String, Object> contents) {
-        try {
-            if (contents.size() >= 1) {
-                final StringJoiner columnsList = new StringJoiner(",");
-                final List<String> valuesList = new ArrayList<>();
-                final StringJoiner interro = new StringJoiner(",");
-
-                for (final Map.Entry<String, Object> entry : contents.entrySet()) {
-                    columnsList.add(entry.getKey());
-                    valuesList.add(entry.getValue().toString());
-                    interro.add("?");
-                }
-
-                final String columns = " (" + columnsList.toString() + ")";
-                final String sql = "INSERT INTO `" + table.name + "` " + columns + " VALUES " + interro.toString();
-
-                final PreparedStatement stmt = table.database.connection.prepareStatement(sql);
-                for (int i = 0; i < valuesList.size(); i++)
-                    stmt.setObject(i+1, valuesList.get(i));
-                stmt.executeUpdate();
-
-                stmt.close();
-            }
-        } catch (final SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     public static void insert (final TableManager<?> table, final RowBuilder builder) {
         try {
             if (builder.datas.size() >= 1) {
-                final PreparedStatement stmt = table.database.connection.prepareStatement("");
+                StringJoiner columns = new StringJoiner(",");
+                StringJoiner preformat = new StringJoiner(",");
 
-                final StringJoiner columns = new StringJoiner(",");
-                final StringJoiner preformat = new StringJoiner(",");
-
-                int i = 1;
-                for (final Map.Entry<String, Object> entry : builder.datas.entrySet()) {
-                    columns.add(entry.getKey());
-                    stmt.setObject(i++, entry.getValue());
+                for (final String key : builder.datas.keySet()) {
+                    columns.add(key);
                     preformat.add("?");
                 }
 
-                final String sql = "INSERT INTO `" + table.name + "` " + columns + " VALUES (" + preformat.toString() + ")";
-                stmt.executeUpdate(sql);
+                final PreparedStatement stmt = table.database.getConnection().prepareStatement(
+                        "INSERT INTO `" + table.name + "` " + columns + " VALUES (" + preformat.toString() + ")"
+                );
 
+                columns = null; // GC
+                preformat = null; // GC
 
+                int i = 1;
+                for (final Object value : builder.datas.values())
+                    stmt.setObject(i++, value);
+
+                stmt.executeUpdate();
                 stmt.close();
             }
         } catch (final SQLException e) {
@@ -214,47 +196,48 @@ public class Requests {
 
     public static void remove (TableManager<?> table, final RowBuilder builder) {
         try {
-
-
             if (builder.datas.size() > 0) {
+                StringJoiner whereComplements = new StringJoiner("AND ");
+                for (final String key : builder.datas.keySet())
+                    whereComplements.add("`" + key + "`=?");
 
-                final StringJoiner whereComplements = new StringJoiner("AND ");
+                final PreparedStatement stmt = table.database.getConnection().prepareStatement(
+                        "DELETE FROM `" + table.name + "` WHERE " + whereComplements.toString()
+                );
 
-                final PreparedStatement stmt = table.database.connection.prepareStatement("");
+                whereComplements = null; // GC
 
                 int i = 1;
-                for (final Map.Entry<String, Object> entry : builder.datas.entrySet()) {
-                    whereComplements.add("`" + entry.getKey() + "` = ?");
-                    stmt.setObject(i++, entry.getValue());
-                }
+                for (final Object object : builder.datas.values())
+                    stmt.setObject(i++, object);
 
-                final String sql = "DELETE FROM `" + table.name + "` WHERE " + whereComplements.toString();
-                stmt.executeUpdate(sql);
-
+                stmt.executeUpdate();
                 stmt.close();
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public static <D> Set<D> getRowLimited (final TableManager<D> table, final RowBuilder contents, int count) {
+    public static <D> Set<D> getRowLimited (final TableManager<D> table, final RowBuilder pattern, int count) {
         final Set<D> res = new HashSet<>();
         try {
-            if (contents.datas.size() > 0) {
-                final StringJoiner sj = new StringJoiner("AND ");
+            if (pattern.datas.size() > 0) {
+                StringJoiner interro = new StringJoiner("AND ");
+                for (final String key : pattern.datas.keySet())
+                    interro.add(key + "=?");
 
-                final PreparedStatement stmt = table.database.connection.prepareStatement("");
+                final PreparedStatement stmt = table.database.getConnection().prepareStatement(
+                        "SELECT * FROM `" + table.name + "` WHERE " + interro.toString()
+                );
+
+                interro = null; // GC
 
                 int i = 1;
-                for (final Map.Entry<String, Object> entry : contents.datas.entrySet()) {
-                    sj.add(entry.getKey() + "= ?");
-                    stmt.setObject(i++, entry.getValue());
-                }
+                for (final Object object : pattern.datas.values())
+                    stmt.setObject(i++, object);
 
-                final String sql = "SELECT * FROM `" + table.name + "` WHERE " + sj.toString();
-                final ResultSet rs = stmt.executeQuery(sql);
-
+                final ResultSet rs = stmt.executeQuery();
                 final ResultSetMetaData data = rs.getMetaData();
 
                 while (count-- > 0 && rs.next()) {
@@ -264,10 +247,9 @@ public class Requests {
                     res.add(content);
                 }
                 rs.close();
-
                 stmt.close();
             }
-        } catch (SQLException | NoSuchFieldException | IllegalAccessException e) {
+        } catch (final SQLException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return res;
@@ -279,21 +261,17 @@ public class Requests {
 
     public static <D> void update (final TableManager<D> table, final RowBuilder pattern, final RowBuilder replacement) {
         try {
-            final StringBuilder sql = new StringBuilder("UPDATE `" + table.name + "` SET ");
-
             final StringJoiner repComa = new StringJoiner(",");
+            final StringJoiner patComa = new StringJoiner(" AND ");
+
             for (final String key : replacement.datas.keySet())
                 repComa.add(key + "=?");
-            sql.append(repComa.toString());
-
-            sql.append(" WHERE ");
-
-            final StringJoiner patComa = new StringJoiner(" AND ");
             for (final String key : pattern.datas.keySet())
                 patComa.add(key + "=?");
-            sql.append(patComa.toString());
 
-            final PreparedStatement stmt = table.database.connection.prepareStatement(sql.toString());
+            final PreparedStatement stmt = table.database.getConnection().prepareStatement(
+                    "UPDATE `" + table.name + "` SET " + repComa.toString() + " WHERE " + patComa.toString()
+            );
 
             int i = 1;
             for (final Object val : replacement.datas.values())
@@ -302,6 +280,7 @@ public class Requests {
                 stmt.setObject(i++, val);
 
             stmt.executeUpdate();
+            stmt.close();
         } catch (final SQLException e) {
            e.printStackTrace();
         }
