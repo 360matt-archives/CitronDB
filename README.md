@@ -74,7 +74,12 @@ But depending on what you want to do in your project, a call may be necessary.
 ```java
 tableManager.updateStructure();
 ```  
-  
+### Delete table:
+You can delete the table, but remember to recreate it if you plan to reuse it in the library afterwards.  
+Since it will not recreate itself.  
+```java
+tableManager.deleteTable();
+```
 ### Insert line:  
 Using the structure class:  
 ```java
@@ -106,4 +111,42 @@ RowBuilder modifications = new RowBuilder()
         
 tableManager.update(pattern, modification);
 // will set someField="the new value" WHERE id=15
+```
+### Get one line (or first line):
+To retrieve the row, you must use a RowBuilder to define a search pattern.  
+Be careful, the result can be null if no row has been found.  
+the result will be an instance of the class structure:  
+```java
+
+RowBuilder pattern = new RowBuilder()
+        .define("email", "matt@risitas.es");
+// search line where email="matt@risitas.es"
+
+AnyClass element = tableManager.getLine( pattern );
+```
+### Get multiple lines:
+Similar to the example above.
+But the output data (instances of the class structure) will be returned in a Set<?> Collection.
+```java
+// find all line where country=France
+RowBuilder pattern = new RowBuilder()
+        .define("country", "France");
+        
+        
+Set<AnyClass> lines = tableManager.getLines(pattern);
+// get unlimited lines
+
+
+Set<AnyClass> lines = tableManager.getLines(pattern, 20);
+// get limited lines, here 20.
+```
+
+### Remove lines:
+You can delete the lines corresponding to the pattern:
+```java
+// find all disabled user account for example.
+RowBuilder pattern = new RowBuilder()
+        .define("disabledAccount", true);
+
+tableManager.remove( pattern );
 ```
