@@ -73,4 +73,37 @@ Usually this method is called in the createTable (true).
 But depending on what you want to do in your project, a call may be necessary.  
 ```java
 tableManager.updateStructure();
+```  
+  
+### Insert line:  
+Using the structure class:  
+```java
+AnyClass element = new AnyClass();
+element.someField = "some value";
+element.id = 15; // example
+element.email = "matt@risitas.es"
+
+tableManager.insert( element );
+```
+Using the RowBuilder:   
+```java
+RowBuilder builder = new RowBuilder()
+        .define("someField", "some value")
+        .define("id", 15)
+        .define("email", "matt@risitas.es");
+        
+tableManager.insert( builder );
+```
+### Update lines:
+To modify rows you must use two RowBuilder instances.  
+One which will serve as a pattern, and the other which will serve to contain the modifications.  
+```java
+RowBuilder pattern = new RowBuilder()
+        .define("id", 15);
+
+RowBuilder modifications = new RowBuilder()
+        .define("someField", " the new value ");
+        
+tableManager.update(pattern, modification);
+// will set someField="the new value" WHERE id=15
 ```
