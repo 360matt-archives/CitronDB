@@ -3,7 +3,6 @@ import wtf.listenia.citronDB.api.annotations.Size;
 import wtf.listenia.citronDB.api.annotations.Unique;
 import wtf.listenia.citronDB.api.builders.RowBuilder;
 import wtf.listenia.citronDB.api.TableManager;
-import wtf.listenia.citronDB.utils.ColumnType;
 import wtf.listenia.citronDB.utils.DebugTime;
 
 public class SomeTests {
@@ -31,8 +30,6 @@ public class SomeTests {
 
         DebugTime debugTime = new DebugTime();
         debugTime.start();
-
-
 
         tableManager.createTable(true);
         // will create the table, or if existe, update these.

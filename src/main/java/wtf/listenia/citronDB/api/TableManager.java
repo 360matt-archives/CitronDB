@@ -15,12 +15,22 @@ public class TableManager <D> {
     public final String name;
 
     public final Class<D> defaultInstance;
+    public final Map<String, Object> defaultAsMap;
 
 
     public TableManager (final Database database, final String name, final Class<D> struct) {
         this.database = database;
         this.name = name;
         this.defaultInstance = struct;
+        this.defaultAsMap = new HashMap<>() {{
+            try {
+                for (final Field field : defaultInstance.getFields()) {
+                    put(field.getName(), field.get(defaultInstance));
+                }
+            } catch (final IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }};
     }
 
     public final void createTable () {
@@ -109,28 +119,28 @@ public class TableManager <D> {
             toModify.removeAll(toCreate);
 
             final StringJoiner action = new StringJoiner(",");
-            boolean mustSaad = false;
+            boolean mustSend = false;
 
             if (toCreate.size() > 0) {
                 action.add("ADD(" + toCreate.stream()
                         .map(x -> ColumnType.getFormat(local.get(x), false))
                         .collect(Collectors.joining(",")) +
                 ")");
-                mustSaad = true;
+                mustSend = true;
             }
             if (toDelete.size() > 0) {
                 action.add("DROP " + String.join(",DROP ", toDelete));
-                mustSaad = true;
+                mustSend = true;
             }
             if (toModify.size() > 0) {
                 action.add("MODIFY " + toModify.stream()
                             .map(x -> ColumnType.getFormat(local.get(x), false))
                             .collect(Collectors.joining(",MODIFY "))
                 );
-                mustSaad = true;
+                mustSend = true;
             }
 
-            if (mustSaad) // If request is complete
+            if (mustSend) // If request is complete
                 // deepcode ignore Sqli: < Tkt bro >
                 stmt.execute("ALTER TABLE `" + this.name + "` " + action.toString() + ";");
 
@@ -175,6 +185,9 @@ public class TableManager <D> {
     public final void insert (final RowBuilder builder) {
         try {
             if (builder.datas.size() >= 1) {
+                for (final Map.Entry<String, Object> entry : defaultAsMap.entrySet())
+                    builder.datas.putIfAbsent(entry.getKey(), entry.getValue());
+
                 StringJoiner columns = new StringJoiner(",");
                 StringJoiner preformat = new StringJoiner(",");
 
@@ -320,26 +333,31 @@ public class TableManager <D> {
 
     public final void update (final RowBuilder pattern, final RowBuilder replacement) {
         try {
-            final StringJoiner repComa = new StringJoiner(",");
-            final StringJoiner patComa = new StringJoiner(" AND ");
+            if (replacement.datas.size() > 0) {
+                for (final Map.Entry<String, Object> entry : defaultAsMap.entrySet())
+                    replacement.datas.putIfAbsent(entry.getKey(), entry.getValue());
 
-            for (final String key : replacement.datas.keySet())
-                repComa.add(key + "=?");
-            for (final String key : pattern.datas.keySet())
-                patComa.add(key + "=?");
+                final StringJoiner repComa = new StringJoiner(",");
+                final StringJoiner patComa = new StringJoiner(" AND ");
 
-            final PreparedStatement stmt = this.database.getConnection().prepareStatement(
-                    "UPDATE `" + this.name + "` SET " + repComa.toString() + " WHERE " + patComa.toString()
-            );
+                for (final String key : replacement.datas.keySet())
+                    repComa.add(key + "=?");
+                for (final String key : pattern.datas.keySet())
+                    patComa.add(key + "=?");
 
-            int i = 1;
-            for (final Object val : replacement.datas.values())
-                stmt.setObject(i++, val);
-            for (final Object val : pattern.datas.values())
-                stmt.setObject(i++, val);
+                final PreparedStatement stmt = this.database.getConnection().prepareStatement(
+                        "UPDATE `" + this.name + "` SET " + repComa.toString() + " WHERE " + patComa.toString()
+                );
 
-            stmt.executeUpdate();
-            stmt.close();
+                int i = 1;
+                for (final Object val : replacement.datas.values())
+                    stmt.setObject(i++, val);
+                for (final Object val : pattern.datas.values())
+                    stmt.setObject(i++, val);
+
+                stmt.executeUpdate();
+                stmt.close();
+            }
         } catch (final SQLException e) {
             e.printStackTrace();
         }
