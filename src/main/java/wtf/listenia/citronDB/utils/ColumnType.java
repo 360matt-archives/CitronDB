@@ -13,30 +13,29 @@ public class ColumnType {
     }
 
     public static String getFormat (final Field field, final Boolean withSpecial) {
+        int size;
+        final String special;
 
-        int size = 0;
-        String special = null;
+        Unique annotUnique;
+        Primary annotPrimary;
+        Size annotSize;
 
-        final Unique annotUnique = field.getAnnotation(Unique.class);
-        if (annotUnique != null) {
+        if ((annotUnique = field.getAnnotation(Unique.class)) != null) {
             size = annotUnique.size();
+            annotUnique = null; // GC
             special = "UNIQUE";
-        } else {
-            final Primary annotPrimary = field.getAnnotation(Primary.class);
-            if (annotPrimary != null) {
-                size = annotPrimary.size();
-                special = "PRIMARY";
-            } else {
-                final Size annotSize = field.getAnnotation(Size.class);
-                if (annotSize != null) {
-                    size = annotSize.size();
-                }
-            }
-        }
-
-        final Size annotSize;
-        if ((annotSize = field.getAnnotation(Size.class)) != null)
+        } else if ((annotPrimary = field.getAnnotation(Primary.class)) != null) {
+            size = annotPrimary.size();
+            annotPrimary = null; // GC
+            special = "PRIMARY";
+        } else if ((annotSize = field.getAnnotation(Size.class)) != null) {
             size = annotSize.size();
+            annotSize = null; // GC
+            special = null;
+        } else {
+            size = 0;
+            special = null;
+        }
 
         final StringBuilder res = new StringBuilder();
 
@@ -54,6 +53,7 @@ public class ColumnType {
             if (size > 255) size = 255;
             res.append("DOUBLE");
         } else if (Boolean.TYPE.isAssignableFrom(type)) {
+            if (size > 0) size = 0;
             res.append("BOOLEAN");
         } else
             res.append( (size > 1) ? "VARCHAR" : "TEXT" );
@@ -64,7 +64,5 @@ public class ColumnType {
             res.append(" ").append(special);
 
         return field.getName() + " " + res.toString();
-
     }
-
 }

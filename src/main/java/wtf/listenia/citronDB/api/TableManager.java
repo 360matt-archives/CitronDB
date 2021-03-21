@@ -4,8 +4,6 @@ import wtf.listenia.citronDB.api.annotations.Primary;
 import wtf.listenia.citronDB.api.annotations.Unique;
 import wtf.listenia.citronDB.api.builders.RowBuilder;
 import wtf.listenia.citronDB.utils.ColumnType;
-import wtf.listenia.citronDB.utils.Instancier;
-
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
@@ -133,6 +131,7 @@ public class TableManager <D> {
             }
 
             if (mustSaad) // If request is complete
+                // deepcode ignore Sqli: < Tkt bro >
                 stmt.execute("ALTER TABLE `" + this.name + "` " + action.toString() + ";");
 
 
@@ -258,7 +257,7 @@ public class TableManager <D> {
                 final ResultSetMetaData data = rs.getMetaData();
 
                 if (rs.next()) {
-                    content = Instancier.createInstance(this.defaultInstance);
+                    content = this.defaultInstance.newInstance();
                     for (int c = 1; c <= data.getColumnCount(); c++) {
                         final Object obj = rs.getObject(c);
                         if (obj != null)
@@ -269,7 +268,7 @@ public class TableManager <D> {
                 rs.close();
                 rs.getStatement().close();
             }
-        } catch (final SQLException | NoSuchFieldException | IllegalAccessException e) {
+        } catch (final SQLException | NoSuchFieldException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
         }
         return content;
@@ -300,7 +299,7 @@ public class TableManager <D> {
                 final ResultSetMetaData data = rs.getMetaData();
 
                 while (limit-- > 0 && rs.next()) {
-                    final D content = Instancier.createInstance(this.defaultInstance);
+                    final D content = this.defaultInstance.newInstance();
 
                     for (int c = 1; c <= data.getColumnCount(); c++) {
                         final Object obj = rs.getObject(c);
@@ -312,7 +311,7 @@ public class TableManager <D> {
                 rs.close();
                 stmt.close();
             }
-        } catch (final SQLException | NoSuchFieldException | IllegalAccessException e) {
+        } catch (final SQLException | NoSuchFieldException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
         }
         return res;

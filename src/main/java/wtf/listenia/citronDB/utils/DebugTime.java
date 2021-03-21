@@ -9,6 +9,7 @@ public class DebugTime {
 
     public void printElapsed () {
         long stop = System.nanoTime();
+        // deepcode ignore SystemPrintln: < for test only >
         System.out.println("Ptn: " + (stop-start));
     }
 

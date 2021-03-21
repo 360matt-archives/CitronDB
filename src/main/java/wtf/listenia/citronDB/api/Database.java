@@ -12,8 +12,8 @@ public class Database {
     private final MysqlDataSource datas = new MysqlDataSource() {{
         try {
             this.setServerTimezone("UTC");
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (final SQLException e) {
+            e.printStackTrace();
         }
     }};
     private Connection connection;
@@ -28,8 +28,8 @@ public class Database {
     public final Database connect () {
         try {
             this.connection = datas.getConnection();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (final SQLException e) {
+            e.printStackTrace();
         }
         return this;
     }
@@ -42,7 +42,9 @@ public class Database {
     public final void close () {
         try {
             this.connection.close();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (final SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public final void closeWithException () throws SQLException {
