@@ -1,4 +1,18 @@
-# 💥 CitronDB - A library to easily handle MySQL
+# 💥 CitronDB - A library to easily handle MySQL  
+This library is made for lazy people like me who don't want to  
+bother using SQL syntaxes to manipulate a database in a project.  
+  
+If you have some SQL skills and your time is not that valuable,  
+maybe you should do without this library, especially if performance is expected.  
+
+## :blue_heart: Avantages:  
+* Faster to develop your project  
+* Easier to handle your database without too much effort  
+
+## :smiling_imp: Disadvantages:  
+* Operations are a bit slower than static queries  
+* You don't learn SQL  
+
 
 ## ⭐ Beginning:
 At the very beginning, you need to initialize the connection to the database by creating a Database instance.  
@@ -19,7 +33,7 @@ You can end a connection at any time:
 db1.close();
 ```
 
-## Create a structure:
+## :blue_heart: :green_heart: :heart: Create a structure: 
 There is no implementation or extensions needed for the class that will serve as a structure.  
 You simply create fields, with optionally default values 
 
@@ -50,7 +64,7 @@ TableManager< AnyClass > tableManager = db2.getTable(" yourTableName ", AnyClass
   
 When you read this sentence you have already done the hard part.  
 
-### Create table
+### :heavy_plus_sign: Create table
 When you create the table, the structure of your class automatically applies to the remote database table.  
 
 If the table already exists, no error will be invoked.  
@@ -67,10 +81,86 @@ tableManager.createTable(true);
    It is equivalent to an updateStructure(). */
 ```
 
-### Update table:
+### :heavy_division_sign: Update table:
 At any time, you can update from your local structure.  
 Usually this method is called in the createTable (true).  
 But depending on what you want to do in your project, a call may be necessary.  
 ```java
 tableManager.updateStructure();
+```  
+### :heavy_minus_sign: Delete table:
+You can delete the table, but remember to recreate it if you plan to reuse it in the library afterwards.  
+Since it will not recreate itself.  
+```java
+tableManager.deleteTable();
+```
+### :pencil2: Insert line:  
+Using the structure class:  
+```java
+AnyClass element = new AnyClass();
+element.someField = "some value";
+element.id = 15; // example
+element.email = "matt@risitas.es"
+
+tableManager.insert( element );
+```
+Using the RowBuilder:   
+```java
+RowBuilder builder = new RowBuilder()
+        .define("someField", "some value")
+        .define("id", 15)
+        .define("email", "matt@risitas.es");
+        
+tableManager.insert( builder );
+```
+### :scissors: Update lines:
+To modify rows you must use two RowBuilder instances.  
+One which will serve as a pattern, and the other which will serve to contain the modifications.  
+```java
+RowBuilder pattern = new RowBuilder()
+        .define("id", 15);
+
+RowBuilder modifications = new RowBuilder()
+        .define("someField", " the new value ");
+        
+tableManager.update(pattern, modification);
+// will set someField="the new value" WHERE id=15
+```
+### :grey_question: Get one line (or first line):
+To retrieve the row, you must use a RowBuilder to define a search pattern.  
+Be careful, the result can be null if no row has been found.  
+the result will be an instance of the class structure:  
+```java
+
+RowBuilder pattern = new RowBuilder()
+        .define("email", "matt@risitas.es");
+// search line where email="matt@risitas.es"
+
+AnyClass element = tableManager.getLine( pattern );
+```
+### :grey_question: Get multiple lines:
+Similar to the example above.
+But the output data (instances of the class structure) will be returned in a Set<?> Collection.
+```java
+// find all line where country=France
+RowBuilder pattern = new RowBuilder()
+        .define("country", "France");
+        
+        
+Set<AnyClass> lines = tableManager.getLines(pattern);
+// get unlimited lines
+
+
+Set<AnyClass> lines = tableManager.getLines(pattern, 20);
+// get limited lines, here 20.
+```
+
+### :recycle: Remove lines:
+You can delete the lines corresponding to the pattern:
+```java
+// find all disabled user account for example.
+RowBuilder pattern = new RowBuilder()
+        .define("disabledAccount", true);
+
+tableManager.remove( pattern );
 ```
