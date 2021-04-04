@@ -317,8 +317,11 @@ public class TableManager <D> {
 
     public final void update (final RowBuilder pattern, final RowBuilder replacement) {
         if (replacement.datas.size() > 0) {
+
+            /*
             for (final Map.Entry<String, Object> entry : defaultAsMap.entrySet())
                 replacement.datas.putIfAbsent(entry.getKey(), entry.getValue());
+             */
 
             final StringJoiner repComa = new StringJoiner(",");
             final StringJoiner patComa = new StringJoiner(" AND ");
