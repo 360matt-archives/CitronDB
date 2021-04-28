@@ -1,4 +1,4 @@
-package wtf.listenia.citronDB.api.annotations;
+package fr.i360matt.citronDB.api.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

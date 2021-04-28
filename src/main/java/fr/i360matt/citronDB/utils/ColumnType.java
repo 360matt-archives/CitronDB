@@ -1,8 +1,8 @@
-package wtf.listenia.citronDB.utils;
+package fr.i360matt.citronDB.utils;
 
-import wtf.listenia.citronDB.api.annotations.Primary;
-import wtf.listenia.citronDB.api.annotations.Size;
-import wtf.listenia.citronDB.api.annotations.Unique;
+import fr.i360matt.citronDB.api.annotations.Primary;
+import fr.i360matt.citronDB.api.annotations.Size;
+import fr.i360matt.citronDB.api.annotations.Unique;
 
 import java.lang.reflect.Field;
 

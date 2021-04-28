@@ -1,9 +1,12 @@
-import wtf.listenia.citronDB.api.Database;
-import wtf.listenia.citronDB.api.annotations.Size;
-import wtf.listenia.citronDB.api.annotations.Unique;
-import wtf.listenia.citronDB.api.builders.RowBuilder;
-import wtf.listenia.citronDB.api.TableManager;
-import wtf.listenia.citronDB.utils.DebugTime;
+import fr.i360matt.citronDB.api.Database;
+import fr.i360matt.citronDB.api.annotations.Size;
+import fr.i360matt.citronDB.api.annotations.Unique;
+import fr.i360matt.citronDB.api.builders.RowBuilder;
+import fr.i360matt.citronDB.api.TableManager;
+import fr.i360matt.citronDB.utils.DebugTime;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class SomeTests {
 

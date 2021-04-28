@@ -1,9 +1,9 @@
-package wtf.listenia.citronDB.api;
+package fr.i360matt.citronDB.api;
 
-import wtf.listenia.citronDB.api.annotations.Primary;
-import wtf.listenia.citronDB.api.annotations.Unique;
-import wtf.listenia.citronDB.api.builders.RowBuilder;
-import wtf.listenia.citronDB.utils.ColumnType;
+import fr.i360matt.citronDB.api.annotations.Primary;
+import fr.i360matt.citronDB.api.annotations.Unique;
+import fr.i360matt.citronDB.api.builders.RowBuilder;
+import fr.i360matt.citronDB.utils.ColumnType;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;

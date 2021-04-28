@@ -1,4 +1,4 @@
-package wtf.listenia.citronDB.api;
+package fr.i360matt.citronDB.api;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 
