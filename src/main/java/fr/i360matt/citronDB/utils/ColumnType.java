@@ -13,56 +13,50 @@ public class ColumnType {
     }
 
     public static String getFormat (final Field field, final Boolean withSpecial) {
-        int size;
         final String special;
-
-        Unique annotUnique;
-        Primary annotPrimary;
-        Size annotSize;
-
-        if ((annotUnique = field.getAnnotation(Unique.class)) != null) {
-            size = annotUnique.size();
-            annotUnique = null; // GC
+        if (field.getAnnotation(Unique.class) != null)
             special = "UNIQUE";
-        } else if ((annotPrimary = field.getAnnotation(Primary.class)) != null) {
-            size = annotPrimary.size();
-            annotPrimary = null; // GC
+         else if (field.getAnnotation(Primary.class) != null)
             special = "PRIMARY";
-        } else if ((annotSize = field.getAnnotation(Size.class)) != null) {
+         else
+            special = null;
+
+        int size = 0;
+        Size annotSize;
+        if ((annotSize = field.getAnnotation(Size.class)) != null) {
             size = annotSize.size();
-            annotSize = null; // GC
-            special = null;
-        } else {
-            size = 0;
-            special = null;
         }
 
         final StringBuilder res = new StringBuilder();
 
         final Class<?> type = field.getType();
-        if (Integer.TYPE.isAssignableFrom(type)) {
+        if (type == int.class) {
             if (size > 255) size = 255;
             res.append("INT");
-        } else if (Long.TYPE.isAssignableFrom(type)) {
+        } else if (type == long.class) {
             if (size > 255) size = 255;
             res.append("BIGINT");
-        } else if (Float.TYPE.isAssignableFrom(type)) {
+        } else if (type == float.class) {
             if (size > 255) size = 255;
             res.append("FLOAT");
-        } else if (Double.TYPE.isAssignableFrom(type)) {
+        } else if (type == double.class) {
             if (size > 255) size = 255;
             res.append("DOUBLE");
-        } else if (Boolean.TYPE.isAssignableFrom(type)) {
+        } else if (type == boolean.class) {
             if (size > 0) size = 0;
             res.append("BOOLEAN");
-        } else
+        } else if (type == String.class) {
             res.append( (size > 1) ? "VARCHAR" : "TEXT" );
+        } else {
+            res.append("BLOB");
+        }
+
 
         if (size > 0)
             res.append("(").append(size).append(")");
         if (withSpecial && special != null)
             res.append(" ").append(special);
 
-        return field.getName() + " " + res.toString();
+        return field.getName() + " " + res;
     }
 }
