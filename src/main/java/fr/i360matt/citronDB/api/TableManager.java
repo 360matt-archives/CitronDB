@@ -21,6 +21,12 @@ public class TableManager <D> {
     public TableManager (final Database database, final String name, final Class<D> struct) {
         this.database = database;
         this.name = name;
+
+        this.tableCache = new TableCache(name, struct.getFields());
+        this.fieldAccess = FieldAccess.get(struct);
+        this.constructorAccess = ConstructorAccess.get(struct);
+
+
         this.defaultInstance = struct;
         this.defaultAsMap = new HashMap<>();
 
@@ -149,29 +155,11 @@ public class TableManager <D> {
     public final void insert (final D line) {
         final Field[] fields = defaultInstance.getFields();
         if (fields.length >= 1) {
-            final StringJoiner columnsList = new StringJoiner(",");
-            final List<Object> valuesList = new ArrayList<>();
-            final StringJoiner interro = new StringJoiner(",");
-
-            try {
-                for (final Field field : fields) {
-                    columnsList.add(field.getName());
-                    valuesList.add(field.get(line));
-                    interro.add("?");
-                }
-
-                final String columns = " (" + columnsList.toString() + ")";
-                final String sql = "INSERT INTO `" + this.name + "` " + columns + " VALUES (" + interro.toString() + ")";
-
-                try (final PreparedStatement stmt = this.database.getConnection().prepareStatement(sql);) {
-                    for (int i = 0; i < valuesList.size(); i++)
-                        stmt.setObject(i + 1, valuesList.get(i));
-
-                    stmt.executeUpdate();
-                } catch (final SQLException e) {
-                    e.printStackTrace();
-                }
-            } catch (final IllegalAccessException e) {
+            try (final PreparedStatement stmt = this.database.getConnection().prepareStatement(this.tableCache.getInsertSQL())) {
+                for (int i = 0; i < fields.length; i++)
+                    stmt.setObject(i + 1, fieldAccess.get(line, i));
+                stmt.executeUpdate();
+            } catch (final SQLException e) {
                 e.printStackTrace();
             }
         }
