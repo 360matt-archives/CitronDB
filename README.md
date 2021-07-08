@@ -104,36 +104,36 @@ element.email = "matt@risitas.es"
 
 tableManager.insert( element );
 ```
-Using the RowBuilder:   
+Using Map<String, Object>:   
 ```java
-RowBuilder builder = new RowBuilder()
-        .define("someField", "some value")
-        .define("id", 15)
-        .define("email", "matt@risitas.es");
+Map<String, Object> builder = new Map<String, Object>();
+builder.put("someField", "some value")
+builder.put("id", 15)
+builder.put("email", "matt@risitas.es");
         
 tableManager.insert( builder );
 ```
 ### :scissors: Update lines:
-To modify rows you must use two RowBuilder instances.  
+To modify rows you must use two Map<String, Object> instances.  
 One which will serve as a pattern, and the other which will serve to contain the modifications.  
 ```java
-RowBuilder pattern = new RowBuilder()
-        .define("id", 15);
+Map<String, Object> pattern = new Map<String, Object>();
+pattern.put("id", 15);
 
-RowBuilder modifications = new RowBuilder()
-        .define("someField", " the new value ");
+Map<String, Object> modifications = new Map<String, Object>()
+modifications.put("someField", " the new value ");
         
 tableManager.update(pattern, modification);
 // will set someField="the new value" WHERE id=15
 ```
 ### :grey_question: Get one line (or first line):
-To retrieve the row, you must use a RowBuilder to define a search pattern.  
+To retrieve the row, you must use a Map<String, Object> to define a search pattern.  
 Be careful, the result can be null if no row has been found.  
 the result will be an instance of the class structure:  
 ```java
 
-RowBuilder pattern = new RowBuilder()
-        .define("email", "matt@risitas.es");
+Map<String, Object> pattern = new Map<String, Object>();
+pattern.put("email", "matt@risitas.es");
 // search line where email="matt@risitas.es"
 
 AnyClass element = tableManager.getLine( pattern );
@@ -143,8 +143,8 @@ Similar to the example above.
 But the output data (instances of the class structure) will be returned in a Set<?> Collection.
 ```java
 // find all line where country=France
-RowBuilder pattern = new RowBuilder()
-        .define("country", "France");
+Map<String, Object> pattern = new Map<String, Object>();
+pattern.put("country", "France");
         
         
 Set<AnyClass> lines = tableManager.getLines(pattern);
@@ -159,8 +159,8 @@ Set<AnyClass> lines = tableManager.getLines(pattern, 20);
 You can delete the lines corresponding to the pattern:
 ```java
 // find all disabled user account for example.
-RowBuilder pattern = new RowBuilder()
-        .define("disabledAccount", true);
+Map<String, Object> pattern = new Map<String, Object>();
+pattern.put("disabledAccount", true);
 
 tableManager.remove( pattern );
 ```
