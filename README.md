@@ -40,13 +40,14 @@ You simply create fields, with optionally default values
 There are three annotations that you will find useful, all of which have the argument size=int.  
 You apply them to the fields concerned   
 
-* @Unique(size=int)
-* @Primary(size=int)
+* @Unique
+* @Primary
 * @Size(size=int)
 
 ```java
     public static class ExampleStucture {
-        @Unique(size = 50)
+        @Unique
+        @Size(size = 50)
         public String test = "truc";
         public String truc = "jaaj";
         @Size(size = 20)
