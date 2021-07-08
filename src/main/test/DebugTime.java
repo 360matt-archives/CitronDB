@@ -1,5 +1,3 @@
-package fr.i360matt.citronDB.utils;
-
 public class DebugTime {
     private long start;
 
