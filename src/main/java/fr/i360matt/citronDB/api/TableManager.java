@@ -402,6 +402,7 @@ public class TableManager <D> {
 
         int ind = 0;
         for (final Map.Entry<String, Object> entry : pattern.entrySet()) {
+            resSQL.append(entry.getKey());
             values[ind] = entry.getValue();
             if (ind > 0)
                 resSQL.append(" AND ");
@@ -412,7 +413,6 @@ public class TableManager <D> {
         final PreparedStatement stmt = this.database.getConnection().prepareStatement(resSQL.toString());
         for (int i = 0; i < values.length; i++)
             stmt.setObject(i+1, values[i]);
-
         return stmt;
     }
 
