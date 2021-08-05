@@ -5,6 +5,15 @@ bother using SQL syntaxes to manipulate a database in a project.
 If you have some SQL skills and your time is not that valuable,  
 maybe you should do without this library, especially if performance is expected.  
 
+## Maven
+```
+<dependency>
+    <groupId>io.github.360matt</groupId>
+    <artifactId>CitronDB</artifactId>
+    <version>1.0-SNAPSHOT</version>
+</dependency>
+```
+
 ## :blue_heart: Avantages:  
 * Faster to develop your project  
 * Easier to handle your database without too much effort  
